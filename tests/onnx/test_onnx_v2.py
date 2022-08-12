@@ -284,6 +284,13 @@ class OnnxExportTestCaseV2(TestCase):
         model_class = FeaturesManager.get_model_class_for_feature(feature)
         config = AutoConfig.from_pretrained(model_name)
         model = model_class.from_config(config)
+
+        # It seems `nn.AdaptiveAvgPool2d` with `output_size` > 1 is not working with ONNX. We get `Segmentation fault`
+        # without any useful information.
+        if model.__class__.__name__ == "Data2VecVisionForSemanticSegmentation":
+            config.pool_scales = [1] * len(config.pool_scales)
+            model = model_class.from_config(config)
+
         onnx_config = onnx_config_class_constructor(model.config)
 
         if is_torch_available():
